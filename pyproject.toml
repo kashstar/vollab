@@ -19,8 +19,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0",
-    "hypothesis>=6.100",
     "ruff>=0.6",
     "mypy>=1.10",
     "pandas-stubs>=2.1",
@@ -41,7 +39,3 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.11"
 strict = true
 plugins = ["pydantic.mypy"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "--import-mode=importlib"
