@@ -25,8 +25,8 @@ class OptionQuote(BaseModel):
     bid: float = Field(ge=0)
     ask: float
     last: float | None = None
-    volume: int
-    open_interest: int
+    volume: float
+    open_interest: float
     underlying_price: float
 
     @field_validator("snapshot_ts")
