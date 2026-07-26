@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 import pytest
 
-from vollab.ingestion.tradier_client import TradierClient
+from vollab.ingestion.tradier_client import Settings, TradierClient
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -20,14 +20,11 @@ def load_fixture() -> Callable[[str], dict[str, Any]]:
 
 
 @pytest.fixture
-def make_tradier_client() -> Callable[..., TradierClient]:
-    def _make(
-        handler: Callable[[httpx.Request], httpx.Response],
-        **kwargs: Any,
-    ) -> TradierClient:
+def make_tradier_client() -> Callable[[Callable[[httpx.Request], httpx.Response]], TradierClient]:
+    def _make(handler: Callable[[httpx.Request], httpx.Response]) -> TradierClient:
         transport = httpx.MockTransport(handler)
         http_client = httpx.Client(transport=transport, base_url="https://api.tradier.com/v1/")
-        kwargs.setdefault("sleep", lambda _seconds: None)
-        return TradierClient(http_client, **kwargs)
+        settings = Settings(token="test-token", _env_file=None)
+        return TradierClient(settings, client=http_client)
 
     return _make

@@ -1,15 +1,9 @@
 import pytest
 from pydantic import ValidationError
 
-from vollab.ingestion.settings import Settings
+from vollab.ingestion.tradier_client import Settings
 
-_ENV_VARS = [
-    "VOLLAB_TRADIER_TOKEN",
-    "VOLLAB_TRADIER_SANDBOX",
-    "VOLLAB_TRADIER_TIMEOUT_SECONDS",
-    "VOLLAB_TRADIER_MIN_REQUEST_INTERVAL_SECONDS",
-    "VOLLAB_TRADIER_MAX_RETRIES",
-]
+_ENV_VARS = ["VOLLAB_TRADIER_TOKEN", "VOLLAB_TRADIER_SANDBOX"]
 
 
 @pytest.fixture(autouse=True)
@@ -39,10 +33,7 @@ def test_sandbox_toggles_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
     assert sandbox.base_url == "https://sandbox.tradier.com/v1/"
 
 
-def test_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sandbox_defaults_to_false(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("VOLLAB_TRADIER_TOKEN", "secret-token")
     settings = Settings(_env_file=None)
     assert settings.sandbox is False
-    assert settings.timeout_seconds == 30.0
-    assert settings.min_request_interval_seconds == 0.5
-    assert settings.max_retries == 3
