@@ -69,6 +69,5 @@ No credentials needed, it only touches Deribit's public endpoints. It'll
 print a real, live BTC option chain.
 
 For code quality: `ruff check .` and `mypy src/ scripts/`. There's no
-automated test suite by design (see `CLAUDE.md` for why). The short version
-is that for a project like this, actually running the thing and reading
-real output catches more than a green checkmark does.
+automated test suite by design. For a project like this, actually running
+the thing and reading real output catches more than a green checkmark does.
