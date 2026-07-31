@@ -10,3 +10,4 @@ build/
 .ipynb_checkpoints/
 .env
 .DS_Store
+data/
