@@ -1,6 +1,7 @@
 import cmath
 import math
 
+from vollab.ingestion.models import OptionType
 from vollab.pricing.models import HestonParams, OptionContract, PriceResult
 from vollab.pricing.pricer import Pricer
 
@@ -59,9 +60,53 @@ class COSPricer(Pricer):
 
             put = call - discount_factor * (forward - strike)
         """
-        raise NotImplementedError(
-            "Implement the COS summation described in the docstring above."
+        a, b = self._truncation_range(
+            params, contract.forward, contract.strike, contract.time_to_expiry
         )
+        width = b - a
+        log_strike = math.log(contract.strike)
+
+        call_price = 0.0
+        for k in range(self._num_terms):
+            u_k = k * math.pi / width
+            phi = self.characteristic_function(
+                u_k, params, contract.forward, contract.time_to_expiry
+            )
+            phi_x = phi * cmath.exp(-1j * u_k * log_strike)
+            cosine_term = (phi_x * cmath.exp(-1j * u_k * a)).real
+
+            v_k = self._call_coefficient(k, a, b, contract.strike)
+            weight = 0.5 if k == 0 else 1.0
+            call_price += weight * cosine_term * v_k
+
+        call_price *= contract.discount_factor
+
+        if contract.option_type is OptionType.CALL:
+            price = call_price
+        else:
+            price = call_price - contract.discount_factor * (contract.forward - contract.strike)
+
+        return PriceResult(price=max(price, 0.0))
+
+    def _call_coefficient(self, k: int, a: float, b: float, strike: float) -> float:
+        """V_k: the call payoff's cosine coefficient on [0, b]."""
+        chi = self._chi(k, 0.0, b, a, b)
+        psi = self._psi(k, 0.0, b, a, b)
+        return (2 / (b - a)) * strike * (chi - psi)
+
+    def _chi(self, k: int, c: float, d: float, a: float, b: float) -> float:
+        """Cosine coefficient of e^x on [c, d]."""
+        freq = k * math.pi / (b - a)
+        term_d = (math.cos(freq * (d - a)) + freq * math.sin(freq * (d - a))) * math.exp(d)
+        term_c = (math.cos(freq * (c - a)) + freq * math.sin(freq * (c - a))) * math.exp(c)
+        return (term_d - term_c) / (1 + freq**2)
+
+    def _psi(self, k: int, c: float, d: float, a: float, b: float) -> float:
+        """Cosine coefficient of the constant 1 on [c, d]."""
+        if k == 0:
+            return d - c
+        freq = k * math.pi / (b - a)
+        return (math.sin(freq * (d - a)) - math.sin(freq * (c - a))) / freq
 
     def characteristic_function(
         self,
