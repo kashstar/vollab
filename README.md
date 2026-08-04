@@ -46,17 +46,33 @@ markets charge you every time you trade.
 
 ## What's actually built
 
-Right now: ingestion, and nothing past it. `DeribitClient` pulls live
-option chains straight from Deribit's public market data API. No account,
-no API key needed, it's just open. Every quote gets validated into a strict
-`OptionQuote` model (strikes have to be positive, bids can't be negative,
-expiries have to be in the future), and prices get converted from
-crypto-denominated to USD using each contract's index price at snapshot
-time, so nothing downstream has to think about "0.012 BTC" as an option
-premium.
+Ingestion and the surface tier are both done, and pricing is most of the
+way there. `DeribitClient` pulls live option chains straight from
+Deribit's public market data API. No account, no API key needed, it's
+just open. Every quote gets validated into a strict `OptionQuote` model
+(strikes have to be positive, bids can't be negative, expiries have to be
+in the future), and prices get converted from crypto-denominated to USD
+using each contract's index price at snapshot time, so nothing downstream
+has to think about "0.012 BTC" as an option premium.
 
-The surface fitting, the two pricers, and the hedging backtest are all
-still ahead. `SPEC.md` has the full design if you want the details.
+On top of that: `ForwardEstimator` recovers each expiry's forward price
+and discount factor straight from put-call parity. `ImpliedVolSolver`
+inverts Black-76 to pull implied vol out of a real market price.
+`SVICalibrator` fits a smooth 5-number curve through the resulting smile.
+`ArbitrageChecker` actually proves whether that curve is arbitrage-free,
+rather than assuming it (it isn't always -- see the notes in
+`svi_calibrator.py`, that's a real, known limitation, not a bug).
+`SurfaceStore` saves all of it as a time series.
+
+For pricing: `COSPricer` prices Heston options via a Fourier-cosine
+expansion; `MonteCarloPricer` prices the same contracts by literally
+simulating thousands of possible futures. They exist specifically to
+check each other, and in testing, they do -- every price in
+`scripts/check_monte_carlo_pricer.py` agrees within one standard error.
+
+Still ahead: fitting Heston's own parameters to a real market surface, and
+the entire hedging tier. `SPEC.md` has the full design if you want the
+details.
 
 ## Running it
 
