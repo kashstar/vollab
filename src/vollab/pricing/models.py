@@ -71,3 +71,24 @@ class PriceResult(BaseModel):
 
     price: float = Field(ge=0)
     standard_error: float | None = Field(default=None, ge=0)
+
+
+class CrossCheckResult(BaseModel):
+    """Result of comparing COSPricer and MonteCarloPricer on one contract.
+
+    passed is True when the two prices differ by no more than
+    CrossChecker's max_std_errors times Monte Carlo's own reported
+    standard error -- i.e. the difference is plausibly just sampling
+    noise, not a sign one of the two implementations is wrong.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    strike: float
+    option_type: OptionType
+    time_to_expiry: float
+    cos_price: float
+    mc_price: float
+    mc_standard_error: float
+    diff_in_std_errors: float
+    passed: bool
