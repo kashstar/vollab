@@ -1,4 +1,5 @@
 from vollab.surface.arbitrage_checker import ArbitrageChecker
+from vollab.surface.black76 import black76_price
 from vollab.surface.forward_estimator import ForwardEstimator
 from vollab.surface.implied_vol_solver import ImpliedVolSolver
 from vollab.surface.models import ArbitrageViolation, ForwardEstimate
@@ -15,4 +16,5 @@ __all__ = [
     "SVICalibrator",
     "SVISlice",
     "SurfaceStore",
+    "black76_price",
 ]
