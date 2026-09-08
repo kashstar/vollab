@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -90,11 +90,39 @@ class DeribitClient:
             )
         return quotes
 
+    def get_historical_prices(self, currency: str, days: int) -> list[float]:
+        """Return real daily closing prices for currency's perpetual future,
+        oldest first, over the trailing `days` days.
+
+        Used by BootstrapSimulator to resample real historical returns
+        rather than simulating from a model.
+        """
+        end_ts = datetime.now(UTC)
+        start_ts = end_ts - timedelta(days=days)
+        result = self._get_raw(
+            "public/get_tradingview_chart_data",
+            {
+                "instrument_name": f"{currency}-PERPETUAL",
+                "start_timestamp": str(int(start_ts.timestamp() * 1000)),
+                "end_timestamp": str(int(end_ts.timestamp() * 1000)),
+                "resolution": "1D",
+            },
+        )
+        if result.get("status") != "ok":
+            raise DeribitError(f"Deribit chart data request returned status {result.get('status')}")
+        closes: list[float] = result["close"]
+        return closes
+
     @staticmethod
     def _expiration_date(expiration_timestamp_ms: int) -> date:
         return datetime.fromtimestamp(expiration_timestamp_ms / 1000, tz=UTC).date()
 
     def _get(self, path: str, params: dict[str, str]) -> list[dict[str, Any]]:
+        result = self._get_raw(path, params)
+        items: list[dict[str, Any]] = result
+        return items
+
+    def _get_raw(self, path: str, params: dict[str, str]) -> Any:
         response = self._client.get(path, params=params)
         if response.status_code != 200:
             raise DeribitError(
@@ -104,5 +132,4 @@ class DeribitClient:
         body: dict[str, Any] = response.json()
         if "error" in body:
             raise DeribitError(f"Deribit request to {path} failed: {body['error']}")
-        result: list[dict[str, Any]] = body["result"]
-        return result
+        return body["result"]
