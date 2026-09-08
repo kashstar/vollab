@@ -47,18 +47,21 @@ surface dynamics (or replay historical ones), does a neural network trained
 to minimize hedging risk, "deep hedging" per Buehler et al. (2019), actually
 beat plain delta or delta-gamma hedging once transaction costs are in the
 picture? Textbook theory says perfect hedging is free and continuous. Real
-markets charge you every time you trade.
+markets charge you every time you trade. See Results below for what a
+real backtest actually shows for delta vs delta-gamma; the deep-hedging
+side of that comparison is still ahead of me, see What's actually built.
 
 ## What's actually built
 
-Ingestion, the surface tier, and pricing are all done; only hedging is
-left. `DeribitClient` pulls live option chains straight from Deribit's
-public market data API. No account, no API key needed, it's just open.
-Every quote gets validated into a strict `OptionQuote` model (strikes
-have to be positive, bids can't be negative, expiries have to be in the
-future), and prices get converted from crypto-denominated to USD using
-each contract's index price at snapshot time, so nothing downstream has
-to think about "0.012 BTC" as an option premium.
+All four tiers exist end to end, with one deliberate exception (the
+deep-hedging loss function, see below). `DeribitClient` pulls live
+option chains straight from Deribit's public market data API. No
+account, no API key needed, it's just open. Every quote gets validated
+into a strict `OptionQuote` model (strikes have to be positive, bids
+can't be negative, expiries have to be in the future), and prices get
+converted from crypto-denominated to USD using each contract's index
+price at snapshot time, so nothing downstream has to think about
+"0.012 BTC" as an option premium.
 
 On top of that: `ForwardEstimator` recovers each expiry's forward price
 and discount factor straight from put-call parity. `ImpliedVolSolver`
@@ -79,9 +82,65 @@ surface (targeting the fitted SVI curves, not raw noisy quotes) using
 `COSPricer` inside the same kind of weighted least squares as
 `SVICalibrator`.
 
-Still ahead: the entire hedging tier, simulating surface dynamics and
-comparing a neural "deep hedging" policy against classic Greeks. `SPEC.md`
-has the full design if you want the details.
+For hedging: `HestonSimulator` generates risk-neutral price paths from
+calibrated Heston parameters; `BootstrapSimulator` generates real-world
+paths instead, by block-resampling a genuine year of BTC's own historical
+returns, so a strategy can be checked against actual market behavior, not
+just Heston's own assumptions about itself. `DeltaHedger` and
+`DeltaGammaHedger` hedge a short option position using Greeks computed
+straight from `COSPricer`; `HedgeBacktester` runs either one over
+simulated paths with proportional transaction costs and reports the
+resulting P&L distribution. See Results below for what that actually
+shows.
+
+`DeepHedger` (a small trained network) and `DeepHedgerTrainer` (a fully
+differentiable simulate-hedge-and-backprop training loop) are both built
+and verified working end to end, right up to one deliberately unfinished
+piece: the training objective itself (a CVaR risk measure of terminal
+P&L) is left for me to write by hand, not handed to me finished --
+`DeepHedgerTrainer.loss()` documents exactly what's needed and points at
+the Rockafellar-Uryasev formulation as a starting point.
+
+`SPEC.md` has the full design, including a couple of scope notes on
+pieces that turned out smaller than originally sketched (the P&L
+attribution breakdown, mainly) once real backtesting made clear what was
+actually worth building first.
+
+## Results
+
+The headline experiment SPEC.md sketched: backtest delta hedging against
+delta-gamma hedging at 0/5/10bps transaction costs, on a 30-day BTC call,
+using paths simulated from a real, live-calibrated Heston surface (3,000
+paths, rehedging every 1.5 days). `scripts/run_headline_experiment.py`
+runs it; deep hedging isn't in this comparison yet, since its loss
+function is still the one open piece (see What's actually built).
+
+| Strategy    | Costs | Mean P&L  | Std P&L  | CVaR95    | Total costs |
+|-------------|------:|----------:|---------:|----------:|------------:|
+| Delta       |  0bps |    -33.97 | 1,493.28 | -3,672.11 |         0.00 |
+| Delta       |  5bps |   -109.48 | 1,498.54 | -3,763.21 |   226,523.28 |
+| Delta       | 10bps |   -184.99 | 1,504.06 | -3,854.89 |   453,046.55 |
+| Delta-gamma |  0bps |   -135.43 |   941.98 | -2,684.39 |         0.00 |
+| Delta-gamma |  5bps |   -209.93 |   934.39 | -2,754.30 |   223,492.22 |
+| Delta-gamma | 10bps |   -284.43 |   933.30 | -2,837.35 |   446,984.45 |
+
+![Terminal P&L distribution for delta vs delta-gamma hedging at 5bps costs](docs/hedge_pnl.png)
+
+Delta-gamma cuts P&L standard deviation by about 37% and meaningfully
+improves CVaR95 (the average loss in the worst 5% of outcomes) at every
+cost level, visible directly in the chart as a noticeably tighter
+distribution. But its mean P&L is worse than plain delta hedging's at
+every cost level too, including the frictionless 0bps case. That's a
+real finding, not noise: delta-gamma is actively trading a second
+instrument (a fixed 5%-out-of-the-money option) every single rehedge, and
+that extra trading carries its own discretization drag even before real
+transaction costs are switched on. Risk reduction has a cost. This is
+exactly the tradeoff gamma hedging is supposed to make, just made
+concrete with real numbers instead of asserted.
+
+Total transaction costs scale almost exactly linearly with the spread,
+for both strategies, which is the correct sanity check on `CostModel`
+itself working as designed.
 
 ## Running it
 
@@ -93,8 +152,12 @@ python scripts/run_deribit.py
 No credentials needed, it only touches Deribit's public endpoints. It'll
 print a real, live BTC option chain. `scripts/` has a `check_*.py` for
 every other class in the project, each running against real live data;
-`scripts/plot_smile.py` regenerates the chart above.
+`scripts/plot_smile.py` and `scripts/plot_hedge_pnl.py` regenerate the
+two charts above, and `scripts/run_headline_experiment.py` regenerates
+the results table (takes a few minutes; it's pricing thousands of paths
+with COSPricer, not a quick call).
 
-For code quality: `ruff check .` and `mypy src/ scripts/`. There's no
-automated test suite by design. For a project like this, actually running
-the thing and reading real output catches more than a green checkmark does.
+For code quality: `ruff check .` and `mypy src/ scripts/`, also run in CI
+on every push via `.github/workflows/ci.yml`. There's no automated test
+suite by design. For a project like this, actually running the thing and
+reading real output catches more than a green checkmark does.
