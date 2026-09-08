@@ -6,6 +6,7 @@ from vollab.pricing.cos_pricer import COSPricer
 from vollab.pricing.models import HestonParams
 
 MIN_HEDGE_GAMMA = 1e-8
+MAX_HEDGE_RATIO = 10.0
 
 
 class DeltaGammaHedger(HedgingStrategy):
@@ -19,6 +20,19 @@ class DeltaGammaHedger(HedgingStrategy):
 
         n_hedge * gamma_hedge = gamma_target
         n_underlying + n_hedge * delta_hedge = delta_target
+
+    Known limitation, found via a real backtest and worth understanding
+    rather than just guarding against: a fixed out-of-the-money hedge
+    option's gamma collapses toward zero as expiry approaches, while an
+    at-the-money target option's gamma grows sharply in the same window.
+    That's real options behavior, not a bug, but it means the exact
+    solution to the 2x2 system can demand an economically absurd hedge
+    position very close to expiry (measured: from ~1x to ~15x the
+    underlying's own notional, over a 30-day option's final days). Rather
+    than solve exactly and hold that position, MAX_HEDGE_RATIO caps it:
+    beyond that ratio, this falls back to plain delta hedging for the
+    step, the same way MIN_HEDGE_GAMMA already does for the near-zero-
+    gamma case.
     """
 
     def __init__(
@@ -66,5 +80,8 @@ class DeltaGammaHedger(HedgingStrategy):
             return HedgePosition(underlying=target_delta, hedge_option=0.0)
 
         n_hedge = target_gamma / hedge_gamma
+        if abs(n_hedge) > MAX_HEDGE_RATIO:
+            return HedgePosition(underlying=target_delta, hedge_option=0.0)
+
         n_underlying = target_delta - n_hedge * hedge_delta
         return HedgePosition(underlying=n_underlying, hedge_option=n_hedge)

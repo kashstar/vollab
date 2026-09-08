@@ -1,4 +1,5 @@
-from vollab.hedging.greeks import DEFAULT_BUMP_PCT, delta_gamma
+from vollab.hedging.greeks import DEFAULT_BUMP_PCT
+from vollab.hedging.greeks import delta as compute_delta
 from vollab.hedging.hedging_strategy import HedgingStrategy
 from vollab.hedging.models import HedgePosition, HedgeState
 from vollab.pricing.cos_pricer import COSPricer
@@ -25,7 +26,7 @@ class DeltaHedger(HedgingStrategy):
 
     def position(self, state: HedgeState) -> HedgePosition:
         params_now = self._params.model_copy(update={"v0": state.variance})
-        delta, _ = delta_gamma(
+        position_delta = compute_delta(
             self._pricer,
             state.spot,
             state.strike,
@@ -34,4 +35,4 @@ class DeltaHedger(HedgingStrategy):
             params_now,
             self._bump_pct,
         )
-        return HedgePosition(underlying=delta)
+        return HedgePosition(underlying=position_delta)

@@ -27,6 +27,26 @@ def price_at(
     return pricer.price(contract, params).price
 
 
+def delta(
+    pricer: COSPricer,
+    spot: float,
+    strike: float,
+    option_type: OptionType,
+    time_to_expiry: float,
+    params: HestonParams,
+    bump_pct: float = DEFAULT_BUMP_PCT,
+) -> float:
+    """Delta only, via a 2-point central difference (no mid price) --
+    for strategies (DeltaHedger) that don't need gamma, this is a third
+    fewer COSPricer calls than delta_gamma, which matters when this runs
+    once per path per step across a backtest.
+    """
+    h = spot * bump_pct
+    price_up = price_at(pricer, spot + h, strike, option_type, time_to_expiry, params)
+    price_down = price_at(pricer, spot - h, strike, option_type, time_to_expiry, params)
+    return (price_up - price_down) / (2 * h)
+
+
 def delta_gamma(
     pricer: COSPricer,
     spot: float,
