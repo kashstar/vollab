@@ -56,6 +56,16 @@ class HedgeBacktester:
         self._hedge_option_type = hedge_option_type
 
     def run(self, paths: PathBatch) -> HedgePnLReport:
+        """Run the backtest and summarize the resulting P&L distribution."""
+        pnl, total_costs = self.simulate_pnl(paths)
+        return self._summarize(pnl, total_costs)
+
+    def simulate_pnl(self, paths: PathBatch) -> tuple[np.ndarray, float]:
+        """Run the backtest and return the raw per-path P&L array plus
+        total transaction costs, without summarizing. Exposed separately
+        from run() so callers that want the full distribution (e.g. for
+        plotting) don't need to duplicate this loop.
+        """
         num_paths = paths.num_paths
         num_steps = paths.num_steps
         horizon = num_steps * paths.dt
@@ -145,7 +155,7 @@ class HedgeBacktester:
             path_pnl -= _payoff(self._strike, self._option_type, spot_final)
             pnl[p] = path_pnl
 
-        return self._summarize(pnl, total_costs)
+        return pnl, total_costs
 
     def _summarize(self, pnl: np.ndarray, total_costs: float) -> HedgePnLReport:
         sorted_pnl = np.sort(pnl)
