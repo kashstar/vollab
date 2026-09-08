@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
+from vollab.ingestion.models import OptionType
+
 
 @dataclass
 class PathBatch:
@@ -39,6 +41,7 @@ class HedgeState:
     spot: float
     variance: float
     strike: float
+    option_type: OptionType
     time_to_expiry: float
     prev_position: float
 
