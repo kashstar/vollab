@@ -66,8 +66,8 @@ st.set_page_config(
 
 class SurfaceSlice:
     """One expiry's fitted forward, SVI slice, and the quotes/vols it was
-    built from -- bundled together since every tab needs some subset of
-    these, and they're all produced by the same fitting pass.
+    built from, bundled together since every tab needs some subset of
+    these and they're all produced by the same fitting pass.
     """
 
     def __init__(
@@ -170,7 +170,7 @@ def build_surface_figure(
 
     Each expiry contributes one row of the mesh, sampled at the same
     grid of log-moneyness values (so every row lines up), but at that
-    expiry's own forward -- so the strike axis is in real dollars, not
+    expiry's own forward, so the strike axis is in real dollars, not
     moneyness, matching how a trading desk actually looks at a surface.
     """
     fitted_sorted = sorted(fitted, key=lambda s: s.time_to_expiry)
@@ -193,7 +193,7 @@ def build_surface_figure(
             vol_mesh[row, col] = s.slice.implied_vol(k, s.time_to_expiry)
 
         # Only plot market points within the same moneyness band as the
-        # mesh -- some far-dated expiries genuinely list strikes several
+        # mesh: some far-dated expiries genuinely list strikes several
         # multiples of the forward away (real, sparse, illiquid Deribit
         # listings), which would otherwise blow out the strike axis and
         # make the whole chart unreadable, the same lesson learned
@@ -286,8 +286,8 @@ st.sidebar.caption(f"{len(fitted)} expiries fitted, {len(skipped)} skipped")
 st.sidebar.header("About")
 st.sidebar.caption(
     "Every number on this page is computed live from Deribit's public "
-    "market data by VolLab's own surface, pricing, and hedging code -- "
-    "nothing here is a mocked-up demo."
+    "market data by VolLab's own surface, pricing, and hedging code. "
+    "Nothing here is a mocked-up demo."
 )
 st.sidebar.markdown(
     ":material/code: [View source on GitHub](https://github.com/kashstar/vollab)"
@@ -309,8 +309,8 @@ with tab_smile:
             "reproduce it, and you get a different number at every strike. "
             "Plotted against strike, that curve typically dips near the "
             "money and rises on both wings, forming a smile (or an "
-            "asymmetric skew, common in crypto) -- the market pricing in "
-            "more tail risk than a constant-vol model would predict. The "
+            "asymmetric skew, common in crypto), with the market pricing "
+            "in more tail risk than a constant-vol model would predict. The "
             "green line is **SVI**, a 5-parameter curve fit through the "
             "noisy real points, giving one smooth, usable description of "
             "the whole smile."
@@ -329,7 +329,7 @@ with tab_smile:
         f"${fe.forward:,.0f}",
         border=True,
         help="The market's expected price for this expiry, recovered from "
-        "put-call parity -- not just today's spot price.",
+        "put-call parity, not just today's spot price.",
     )
     col2.metric(
         "Discount factor",
@@ -426,7 +426,7 @@ with tab_smile:
     st.markdown("**SVI fit parameters**")
     svi_col1, svi_col2, svi_col3, svi_col4, svi_col5 = st.columns(5)
     svi_col1.metric(
-        "a", f"{slice_.a:.5f}", help="Overall variance level -- shifts the whole curve up/down."
+        "a", f"{slice_.a:.5f}", help="Overall variance level: shifts the whole curve up or down."
     )
     svi_col2.metric(
         "b", f"{slice_.b:.5f}", help="Wing steepness. Larger b means the smile rises faster "
@@ -444,7 +444,7 @@ with tab_smile:
     svi_col5.metric(
         "sigma",
         f"{slice_.sigma:.5f}",
-        help="Curvature right at the smile's minimum -- how sharply it bends "
+        help="Curvature right at the smile's minimum: how sharply it bends "
         "near the money.",
     )
 
@@ -452,9 +452,9 @@ with tab_smile:
         st.markdown(
             "A fitted curve isn't automatically economically sane just "
             "because it fits the points well. **Butterfly arbitrage** "
-            "means the curve implies a negative probability somewhere -- "
-            "mathematically impossible, and a sign the fit (not the real "
-            "market) has gone wrong. `ArbitrageChecker` derives the "
+            "means the curve implies a negative probability somewhere, "
+            "which is mathematically impossible and a sign the fit (not "
+            "the real market) has gone wrong. `ArbitrageChecker` derives the "
             "implied probability density from the curve's own shape "
             "(Breeden-Litzenberger) and checks it never goes negative."
         )
@@ -483,7 +483,7 @@ with tab_surface3d:
     with st.expander("What is this?", icon=":material/lightbulb:"):
         st.markdown(
             "The smile in the first tab is a snapshot of one expiry. But "
-            "every expiry has its own smile, and they're not independent -- "
+            "every expiry has its own smile, and they're not independent: "
             "near-dated smiles are usually steeper (less time for extreme "
             "moves to look proportionally large), while far-dated ones "
             "flatten out. Stack every expiry's smile side by side and you "
@@ -590,7 +590,7 @@ with tab_pricing:
             "Fourier-series expansion) and `MonteCarloPricer` (literally "
             "simulating thousands of possible futures and averaging the "
             "payoff). If a Heston implementation has a subtle bug, it "
-            "tends to still produce a plausible-looking number -- so "
+            "tends to still produce a plausible-looking number, so "
             "instead of trusting either method alone, the two are checked "
             "against each other below. Agreement is real evidence both "
             "are right, not proof either one is."
@@ -628,7 +628,7 @@ with tab_pricing:
     col5.metric(
         "v0",
         f"{heston_params.v0:.4f}",
-        help="Today's starting variance -- where the process begins before "
+        help="Today's starting variance, where the process begins before "
         "any mean reversion has had time to act.",
     )
 
@@ -640,7 +640,7 @@ with tab_pricing:
             "variance can touch zero under these calibrated params. This is "
             "a real mathematical property of the fitted parameters "
             "(`2 * kappa * theta` should be >= `xi^2` to guarantee variance "
-            "never hits exactly zero), not a bug -- it just means this "
+            "never hits exactly zero), not a bug. It just means this "
             "particular calibration lands in the numerically trickier regime.",
             icon=":material/warning:",
         )
@@ -672,7 +672,7 @@ with tab_pricing:
         "COS price",
         f"${cos_result.price:,.2f}",
         border=True,
-        help="Price from the Fourier-cosine expansion method -- fast, "
+        help="Price from the Fourier-cosine expansion method: fast, "
         "deterministic, no randomness.",
     )
     p2.metric(
@@ -683,7 +683,7 @@ with tab_pricing:
         border=True,
         help="Price from simulating 20,000 random price paths and "
         "averaging the discounted payoff. stderr is the standard error "
-        "of that average -- how much this estimate would wobble if you "
+        "of that average: how much this estimate would wobble if you "
         "reran it with a different random seed.",
     )
     p3.metric(
@@ -697,14 +697,14 @@ with tab_pricing:
     cross_check_ok = abs(diff_in_stderr) < 3
     if cross_check_ok:
         st.success(
-            "COS and Monte Carlo agree within sampling noise -- no sign of a "
-            "pricing bug in either method.",
+            "COS and Monte Carlo agree within sampling noise, with no sign "
+            "of a pricing bug in either method.",
             icon=":material/check_circle:",
         )
     else:
         st.error(
-            "COS and Monte Carlo disagree by more than 3 standard errors -- "
-            "one of the two pricers likely has a real bug.",
+            "COS and Monte Carlo disagree by more than 3 standard errors, "
+            "so one of the two pricers likely has a real bug.",
             icon=":material/error:",
         )
 
@@ -724,7 +724,7 @@ with tab_hedging:
             "real, not theoretical: gamma hedging usually reduces P&L "
             "variance, but trading a second instrument every step adds "
             "its own cost and drag, so it doesn't automatically win on "
-            "average -- that's exactly what this backtest measures."
+            "average. That's exactly what this backtest measures."
         )
 
     st.caption(
@@ -744,7 +744,7 @@ with tab_hedging:
         5.0,
         step=1.0,
         help="Transaction cost per trade, as basis points of trade value "
-        "(100bps = 1%). 0 means frictionless -- costs isolate purely from "
+        "(100bps = 1%). 0 means frictionless, so costs isolate purely from "
         "rebalancing.",
     )
     num_paths = h2.slider(
@@ -855,7 +855,7 @@ with tab_hedging:
             "payoff owed, minus hedging costs, plus/minus hedge P&L)."
         )
         std_help = (
-            "Standard deviation of that P&L across paths -- how spread out "
+            "Standard deviation of that P&L across paths: how spread out "
             "the outcomes are. Lower means more predictable, tighter risk."
         )
         costs_help = "Total transaction costs paid across all paths and rehedges."
@@ -904,7 +904,7 @@ with tab_hedging:
                 "Delta-gamma hedging came out ahead on both counts this run: "
                 "tighter P&L and a better average outcome. That's not the "
                 "usual pattern (see the README's headline experiment for the "
-                "typical tradeoff) -- it can happen at low path counts or "
+                "typical tradeoff). It can happen at low path counts or "
                 "specific market conditions, so treat it as one data point, "
                 "not a rule."
             )
@@ -916,7 +916,7 @@ with tab_hedging:
                 f"worst-5%-of-outcomes CVaR95 by \\${abs(cvar_improvement):,.0f}, "
                 "but its mean P&L was "
                 f"\\${abs(mean_diff):,.2f} worse, and it paid "
-                f"\\${dg_extra_costs:,.2f} more in transaction costs -- the "
+                f"\\${dg_extra_costs:,.2f} more in transaction costs, the "
                 "price of trading a second instrument every rehedge to stay "
                 "gamma-neutral. Whether that's worth it depends on whether "
                 "you're optimizing for predictability or for expected return."
@@ -928,7 +928,7 @@ with tab_hedging:
                 "higher than plain delta hedging, on top of "
                 f"\\${dg_extra_costs:,.2f} more in transaction costs. At this "
                 "combination of spread, path count, and rehedge frequency, "
-                "the extra trading isn't paying for itself -- try raising "
+                "the extra trading isn't paying for itself. Try raising "
                 "the path count for a less noisy comparison, or lowering "
                 "the spread to isolate discretization drag from cost drag."
             )

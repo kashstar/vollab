@@ -16,7 +16,7 @@ class DeribitError(Exception):
 class DeribitClient:
     """Fetches option chains from Deribit's public market data API.
 
-    No account or API key needed — this only touches public endpoints.
+    No account or API key needed. This only touches public endpoints.
     """
 
     def __init__(self, *, testnet: bool = False, client: httpx.Client | None = None) -> None:
@@ -31,7 +31,7 @@ class DeribitClient:
         """Return available option expiration dates for currency (e.g. "BTC").
 
         Excludes today's date even if a not-yet-expired same-day contract
-        exists (Deribit runs daily expiries) — OptionQuote requires expiry
+        exists (Deribit runs daily expiries). OptionQuote requires expiry
         to be strictly after the snapshot date, so today's expiry is not
         fetchable through get_chain anyway.
         """
@@ -47,7 +47,7 @@ class DeribitClient:
         """Return the option chain for currency at expiration.
 
         All quotes returned share one snapshot_ts. Deribit quotes option
-        premiums in the underlying crypto, not USD — bid/ask/last are
+        premiums in the underlying crypto, not USD, so bid/ask/last are
         converted to USD here via each instrument's index price.
         """
         snapshot_ts = datetime.now(UTC)

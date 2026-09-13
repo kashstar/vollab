@@ -1,6 +1,6 @@
 """Fetch a live BTC option chain from Deribit and print it.
 
-No account or API key needed — Deribit's market data is public.
+No account or API key needed. Deribit's market data is public.
 Run with: python scripts/run_deribit.py
 """
 
