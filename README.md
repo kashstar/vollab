@@ -106,6 +106,14 @@ pieces that turned out smaller than originally sketched (the P&L
 attribution breakdown, mainly) once real backtesting made clear what was
 actually worth building first.
 
+There's also a Streamlit dashboard (`scripts/dashboard.py`) that puts all
+three built tiers behind one live UI: a volatility smile and term
+structure view per currency, a Heston pricing panel with the same COS-
+vs-Monte-Carlo cross-check as `CrossChecker`, and an interactive hedging
+backtest with adjustable cost/scale sliders. Every number on it comes
+from the same live Deribit data and the same classes as the
+`check_*.py` scripts, not a separate mocked-up version for show.
+
 ## Results
 
 The headline experiment SPEC.md sketched: backtest delta hedging against
@@ -156,6 +164,16 @@ every other class in the project, each running against real live data;
 two charts above, and `scripts/run_headline_experiment.py` regenerates
 the results table (takes a few minutes; it's pricing thousands of paths
 with COSPricer, not a quick call).
+
+```bash
+streamlit run scripts/dashboard.py
+```
+
+Opens the live dashboard in your browser. The vol surface and pricing
+tabs respond in a second or two; the hedging backtest tab is slower by
+design (it's pricing options with COSPricer at every rehedge step), so
+its default scale (300 paths, 10 steps) is tuned for interactivity, with
+sliders to go bigger if you want to wait.
 
 For code quality: `ruff check .` and `mypy src/ scripts/`, also run in CI
 on every push via `.github/workflows/ci.yml`. There's no automated test
