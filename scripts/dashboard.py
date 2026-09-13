@@ -56,7 +56,12 @@ SURFACE_3D_MONEYNESS_POINTS = 40
 
 LEGEND_TOP = {"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "left", "x": 0}
 
-st.set_page_config(page_title="VolLab", layout="wide")
+st.set_page_config(
+    page_title="VolLab",
+    page_icon=":material/candlestick_chart:",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 
 class SurfaceSlice:
@@ -245,19 +250,23 @@ def build_surface_figure(
     return fig
 
 
-st.title("VolLab")
-st.caption(
+st.title("VolLab", icon=":material/candlestick_chart:")
+title_col, badge_col = st.columns([5, 1])
+title_col.caption(
     "Live BTC/ETH options research: implied vol surface, Heston pricing, "
     "and a hedging backtest, built on Deribit's public market data."
 )
+with badge_col:
+    st.badge("Live data", icon=":material/sensors:", color="green")
 
+st.sidebar.header("Settings", icon=":material/tune:")
 currency = st.sidebar.selectbox(
     "Underlying",
     ["BTC", "ETH"],
     help="Which crypto's option chain to pull from Deribit. Everything on "
     "the page refits from scratch when you change this.",
 )
-if st.sidebar.button("Refresh live data"):
+if st.sidebar.button("Refresh live data", icon=":material/refresh:"):
     load_surface.clear()
     calibrate_heston.clear()
 
@@ -274,14 +283,25 @@ if not fitted:
 st.sidebar.caption(f"Snapshot: {snapshot_ts.strftime('%Y-%m-%d %H:%M:%S UTC')}")
 st.sidebar.caption(f"{len(fitted)} expiries fitted, {len(skipped)} skipped")
 
+st.sidebar.header("About", icon=":material/info:")
+st.sidebar.caption(
+    "Every number on this page is computed live from Deribit's public "
+    "market data by VolLab's own surface, pricing, and hedging code -- "
+    "nothing here is a mocked-up demo."
+)
+st.sidebar.markdown(
+    ":material/code: [View source on GitHub](https://github.com/kashstar/vollab)"
+)
+st.sidebar.caption("Built by Kashyap Nepaliya")
+
 tab_smile, tab_surface3d, tab_term, tab_pricing, tab_hedging = st.tabs(
-    ["Volatility Smile", "3D Surface", "Term Structure", "Heston Pricing", "Hedging Backtest"]
+    ["Volatility smile", "3D surface", "Term structure", "Heston pricing", "Hedging backtest"]
 )
 
 with tab_smile:
-    st.subheader(f"{currency} volatility smile")
+    st.subheader(f"{currency} volatility smile", icon=":material/show_chart:")
 
-    with st.expander("What is a volatility smile?"):
+    with st.expander("What is a volatility smile?", icon=":material/lightbulb:"):
         st.markdown(
             "Black-Scholes assumes one constant volatility applies to every "
             "strike. Real markets disagree: solve backwards from each "
@@ -307,12 +327,15 @@ with tab_smile:
     col1.metric(
         "Forward",
         f"${fe.forward:,.0f}",
+        icon=":material/trending_up:",
+        border=True,
         help="The market's expected price for this expiry, recovered from "
         "put-call parity -- not just today's spot price.",
     )
     col2.metric(
         "Discount factor",
         f"{fe.discount_factor:.4f}",
+        border=True,
         help="The time-value-of-money factor implied by the same fit. "
         "Close to 1 for short-dated crypto options, since there's no "
         "strong risk-free carry the way there is for equities.",
@@ -320,12 +343,14 @@ with tab_smile:
     col3.metric(
         "Strike pairs used",
         fe.num_pairs,
+        border=True,
         help="How many call/put strikes had a real two-sided market and "
         "went into fitting the forward above.",
     )
     col4.metric(
         "Forward fit R2",
         f"{fe.r_squared:.4f}",
+        border=True,
         help="How well the strikes actually fall on the theoretical "
         "put-call-parity line. 1.0 is a perfect fit; lower means noisier "
         "quotes went into this expiry's forward.",
@@ -424,7 +449,7 @@ with tab_smile:
         "near the money.",
     )
 
-    with st.expander("What is the arbitrage check?"):
+    with st.expander("What is the arbitrage check?", icon=":material/lightbulb:"):
         st.markdown(
             "A fitted curve isn't automatically economically sane just "
             "because it fits the points well. **Butterfly arbitrage** "
@@ -438,19 +463,25 @@ with tab_smile:
     checker = ArbitrageChecker()
     violations = checker.check([slice_])
     if violations:
-        st.warning(f"{len(violations)} butterfly-arbitrage violation(s) found in this slice.")
+        st.warning(
+            f"{len(violations)} butterfly-arbitrage violation(s) found in this slice.",
+            icon=":material/warning:",
+        )
     else:
-        st.success("No butterfly-arbitrage violations found in this slice.")
+        st.success(
+            "No butterfly-arbitrage violations found in this slice.",
+            icon=":material/check_circle:",
+        )
 
     if skipped:
-        with st.expander(f"{len(skipped)} expiries skipped"):
+        with st.expander(f"{len(skipped)} expiries skipped", icon=":material/filter_alt_off:"):
             for expiry_str, reason in skipped:
                 st.text(f"{expiry_str}: {reason}")
 
 with tab_surface3d:
-    st.subheader(f"{currency} volatility surface")
+    st.subheader(f"{currency} volatility surface", icon=":material/view_in_ar:")
 
-    with st.expander("What is this?"):
+    with st.expander("What is this?", icon=":material/lightbulb:"):
         st.markdown(
             "The smile in the first tab is a snapshot of one expiry. But "
             "every expiry has its own smile, and they're not independent -- "
@@ -472,12 +503,14 @@ with tab_surface3d:
         surface_fig = build_surface_figure(fitted, snapshot_ts, currency)
         st.plotly_chart(surface_fig, use_container_width=True)
     else:
-        st.warning("Need at least 2 fitted expiries to build a surface.")
+        st.warning(
+            "Need at least 2 fitted expiries to build a surface.", icon=":material/warning:"
+        )
 
 with tab_term:
-    st.subheader(f"{currency} term structure")
+    st.subheader(f"{currency} term structure", icon=":material/timeline:")
 
-    with st.expander("What is term structure?"):
+    with st.expander("What is term structure?", icon=":material/lightbulb:"):
         st.markdown(
             "This is the at-the-money slice of the surface above: how "
             "implied volatility changes with time to expiry, holding "
@@ -542,9 +575,11 @@ with tab_term:
     )
 
 with tab_pricing:
-    st.subheader(f"Heston pricing ({currency})")
+    st.subheader(f"Heston pricing ({currency})", icon=":material/calculate:")
 
-    with st.expander("What is the Heston model, and why cross-check two ways?"):
+    with st.expander(
+        "What is the Heston model, and why cross-check two ways?", icon=":material/lightbulb:"
+    ):
         st.markdown(
             "SVI is a curve fit: useful for reading off vols at strikes "
             "that trade, useless for pricing something that's never "
@@ -607,7 +642,8 @@ with tab_pricing:
             "a real mathematical property of the fitted parameters "
             "(`2 * kappa * theta` should be >= `xi^2` to guarantee variance "
             "never hits exactly zero), not a bug -- it just means this "
-            "particular calibration lands in the numerically trickier regime."
+            "particular calibration lands in the numerically trickier regime.",
+            icon=":material/warning:",
         )
 
     price_expiry_labels = [str(s.expiry) for s in fitted]
@@ -636,6 +672,7 @@ with tab_pricing:
     p1.metric(
         "COS price",
         f"${cos_result.price:,.2f}",
+        border=True,
         help="Price from the Fourier-cosine expansion method -- fast, "
         "deterministic, no randomness.",
     )
@@ -643,25 +680,39 @@ with tab_pricing:
         "Monte Carlo price",
         f"${mc_result.price:,.2f}",
         f"stderr {mc_result.standard_error:.2f}",
+        delta_color="off",
+        border=True,
         help="Price from simulating 20,000 random price paths and "
         "averaging the discounted payoff. stderr is the standard error "
         "of that average -- how much this estimate would wobble if you "
         "reran it with a different random seed.",
     )
-    cross_check_label = "agree" if abs(diff_in_stderr) < 3 else "DISAGREE"
     p3.metric(
         "Cross-check",
         f"{diff_in_stderr:+.2f} stderr",
-        cross_check_label,
+        border=True,
         help="The two prices' difference, measured in Monte Carlo standard "
         "errors. Within about 3 is consistent with pure sampling noise; "
         "much larger would mean one of the two pricers is actually wrong.",
     )
+    cross_check_ok = abs(diff_in_stderr) < 3
+    if cross_check_ok:
+        st.success(
+            "COS and Monte Carlo agree within sampling noise -- no sign of a "
+            "pricing bug in either method.",
+            icon=":material/check_circle:",
+        )
+    else:
+        st.error(
+            "COS and Monte Carlo disagree by more than 3 standard errors -- "
+            "one of the two pricers likely has a real bug.",
+            icon=":material/error:",
+        )
 
 with tab_hedging:
-    st.subheader(f"Hedging backtest ({currency})")
+    st.subheader(f"Hedging backtest ({currency})", icon=":material/balance:")
 
-    with st.expander("What is delta vs delta-gamma hedging?"):
+    with st.expander("What is delta vs delta-gamma hedging?", icon=":material/lightbulb:"):
         st.markdown(
             "Selling an option leaves you exposed to the underlying's "
             "price moving. **Delta hedging** offsets that by holding "
@@ -726,7 +777,7 @@ with tab_hedging:
         help="Time to expiry of the option being hedged.",
     )
 
-    if st.button("Run backtest", type="primary"):
+    if st.button("Run backtest", type="primary", icon=":material/play_arrow:"):
         spot0 = fitted[0].forward_estimate.forward
         strike0 = spot0
         hedge_strike = spot0 * 1.05
@@ -809,17 +860,85 @@ with tab_hedging:
             "the outcomes are. Lower means more predictable, tighter risk."
         )
         costs_help = "Total transaction costs paid across all paths and rehedges."
+        cvar_help = (
+            "Conditional Value at Risk at 95%: the average P&L across only "
+            "the worst 5% of paths. This is what actually happens in a bad "
+            "scenario, not just how wide the distribution looks on average."
+        )
+
+        def cvar95(pnl: np.ndarray) -> float:
+            threshold = np.percentile(pnl, 5)
+            return float(pnl[pnl <= threshold].mean())
+
+        delta_mean = float(np.mean(delta_pnl))
+        delta_std = float(np.std(delta_pnl, ddof=1))
+        delta_cvar = cvar95(delta_pnl)
+        dg_mean = float(np.mean(dg_pnl))
+        dg_std = float(np.std(dg_pnl, ddof=1))
+        dg_cvar = cvar95(dg_pnl)
 
         d1, d2 = st.columns(2)
         with d1:
             st.markdown("**Delta hedge**")
-            st.metric("Mean P&L", f"${np.mean(delta_pnl):,.2f}", help=pnl_help)
-            st.metric("Std P&L", f"${np.std(delta_pnl, ddof=1):,.2f}", help=std_help)
-            st.metric("Total costs", f"${delta_costs:,.2f}", help=costs_help)
+            st.metric("Mean P&L", f"${delta_mean:,.2f}", border=True, help=pnl_help)
+            st.metric("Std P&L", f"${delta_std:,.2f}", border=True, help=std_help)
+            st.metric("CVaR95", f"${delta_cvar:,.2f}", border=True, help=cvar_help)
+            st.metric("Total costs", f"${delta_costs:,.2f}", border=True, help=costs_help)
         with d2:
             st.markdown("**Delta-gamma hedge**")
-            st.metric("Mean P&L", f"${np.mean(dg_pnl):,.2f}", help=pnl_help)
-            st.metric("Std P&L", f"${np.std(dg_pnl, ddof=1):,.2f}", help=std_help)
-            st.metric("Total costs", f"${dg_costs:,.2f}", help=costs_help)
+            st.metric("Mean P&L", f"${dg_mean:,.2f}", border=True, help=pnl_help)
+            st.metric("Std P&L", f"${dg_std:,.2f}", border=True, help=std_help)
+            st.metric("CVaR95", f"${dg_cvar:,.2f}", border=True, help=cvar_help)
+            st.metric("Total costs", f"${dg_costs:,.2f}", border=True, help=costs_help)
+
+        st.subheader("What this run implies", icon=":material/insights:")
+
+        std_reduction_pct = (delta_std - dg_std) / delta_std * 100
+        cvar_improvement = dg_cvar - delta_cvar
+        mean_diff = dg_mean - delta_mean
+        dg_wins_risk = std_reduction_pct > 0
+        dg_wins_mean = mean_diff > 0
+        dg_extra_costs = dg_costs - delta_costs
+
+        if dg_wins_risk and dg_wins_mean:
+            verdict = (
+                "Delta-gamma hedging came out ahead on both counts this run: "
+                "tighter P&L and a better average outcome. That's not the "
+                "usual pattern (see the README's headline experiment for the "
+                "typical tradeoff) -- it can happen at low path counts or "
+                "specific market conditions, so treat it as one data point, "
+                "not a rule."
+            )
+        elif dg_wins_risk:
+            verdict = (
+                "This is the textbook gamma-hedging tradeoff: delta-gamma cut "
+                f"P&L standard deviation by {std_reduction_pct:.0f}% "
+                f"(\\${delta_std:,.0f} to \\${dg_std:,.0f}) and improved the "
+                f"worst-5%-of-outcomes CVaR95 by \\${abs(cvar_improvement):,.0f}, "
+                "but its mean P&L was "
+                f"\\${abs(mean_diff):,.2f} worse, and it paid "
+                f"\\${dg_extra_costs:,.2f} more in transaction costs -- the "
+                "price of trading a second instrument every rehedge to stay "
+                "gamma-neutral. Whether that's worth it depends on whether "
+                "you're optimizing for predictability or for expected return."
+            )
+        else:
+            verdict = (
+                "Delta-gamma hedging didn't reduce risk this run: its P&L "
+                f"standard deviation was actually \\${abs(delta_std - dg_std):,.0f} "
+                "higher than plain delta hedging, on top of "
+                f"\\${dg_extra_costs:,.2f} more in transaction costs. At this "
+                "combination of spread, path count, and rehedge frequency, "
+                "the extra trading isn't paying for itself -- try raising "
+                "the path count for a less noisy comparison, or lowering "
+                "the spread to isolate discretization drag from cost drag."
+            )
+
+        st.info(verdict, icon=":material/insights:")
     else:
-        st.info("Set your parameters and click Run backtest.")
+        st.info("Set your parameters and click Run backtest.", icon=":material/info:")
+
+st.caption(
+    "Data: [Deribit public API](https://docs.deribit.com/) · "
+    "Code: [github.com/kashstar/vollab](https://github.com/kashstar/vollab)"
+)

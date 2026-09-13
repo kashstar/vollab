@@ -1,0 +1,82 @@
+# VolLab theme. Colors are tied to the chart palette in scripts/dashboard.py
+# (CALL_COLOR/PUT_COLOR/FIT_COLOR) so the UI chrome and the Plotly figures
+# read as one system in both light and dark mode.
+
+[theme]
+# Mode-independent options: baseFontSize and showSidebarBorder are only
+# valid at the top level, not inside [theme.light]/[theme.dark].
+showSidebarBorder = true
+baseFontSize = 14
+linkUnderline = false
+
+[theme.light]
+primaryColor = "#2a78d6"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f5f7fa"
+textColor = "#1a2233"
+linkColor = "#2a78d6"
+borderColor = "#dfe3ea"
+codeBackgroundColor = "#f5f7fa"
+codeTextColor = "#1a2233"
+showWidgetBorder = true
+baseRadius = "8px"
+buttonRadius = "8px"
+
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+
+greenColor = "#1baf7a"
+redColor = "#d64545"
+orangeColor = "#eb6834"
+blueColor = "#2a78d6"
+violetColor = "#8250df"
+grayColor = "#57606a"
+
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#8250df", "#d64545", "#dbab09", "#57606a"]
+
+dataframeBorderColor = "#dfe3ea"
+dataframeHeaderBackgroundColor = "#f5f7fa"
+
+[theme.light.sidebar]
+backgroundColor = "#f5f7fa"
+secondaryBackgroundColor = "#eaeef2"
+textColor = "#1a2233"
+borderColor = "#dfe3ea"
+primaryColor = "#2a78d6"
+
+[theme.dark]
+primaryColor = "#5b9bea"
+backgroundColor = "#0f1420"
+secondaryBackgroundColor = "#1a2233"
+textColor = "#e7ebf3"
+linkColor = "#5b9bea"
+borderColor = "#2a3347"
+codeBackgroundColor = "#1a2233"
+codeTextColor = "#cbd3e1"
+showWidgetBorder = true
+baseRadius = "8px"
+buttonRadius = "8px"
+
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+
+greenColor = "#34d399"
+redColor = "#f87171"
+orangeColor = "#fb923c"
+blueColor = "#5b9bea"
+violetColor = "#a78bfa"
+grayColor = "#94a3b8"
+
+chartCategoricalColors = ["#5b9bea", "#fb923c", "#34d399", "#a78bfa", "#f87171", "#fbbf24", "#94a3b8"]
+
+dataframeBorderColor = "#2a3347"
+dataframeHeaderBackgroundColor = "#1a2233"
+
+[theme.dark.sidebar]
+backgroundColor = "#0b0f18"
+secondaryBackgroundColor = "#1a2233"
+textColor = "#e7ebf3"
+borderColor = "#2a3347"
+primaryColor = "#5b9bea"
