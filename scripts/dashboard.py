@@ -14,6 +14,7 @@ from math import exp, log
 
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.graph_objects as go
 import streamlit as st
 from matplotlib.axes import Axes
 
@@ -44,6 +45,8 @@ DELTA_GAMMA_COLOR = "#1baf7a"
 
 SURFACE_CACHE_TTL = 30
 HESTON_NUM_TERMS = 64
+SURFACE_3D_MONEYNESS_RANGE = (-0.3, 0.3)
+SURFACE_3D_MONEYNESS_POINTS = 40
 
 st.set_page_config(page_title="VolLab", layout="wide")
 
@@ -150,6 +153,86 @@ def style_axes(ax: Axes) -> None:
     ax.spines["right"].set_visible(False)
 
 
+def build_surface_figure(
+    fitted: list[SurfaceSlice], snapshot_ts: datetime, currency: str
+) -> go.Figure:
+    """Build a 3D (strike, days-to-expiry, implied vol) figure: a mesh
+    surface from each expiry's fitted SVI slice, plus the real market
+    points that went into fitting it.
+
+    Each expiry contributes one row of the mesh, sampled at the same
+    grid of log-moneyness values (so every row lines up), but at that
+    expiry's own forward -- so the strike axis is in real dollars, not
+    moneyness, matching how a trading desk actually looks at a surface.
+    """
+    fitted_sorted = sorted(fitted, key=lambda s: s.time_to_expiry)
+    k_grid = np.linspace(*SURFACE_3D_MONEYNESS_RANGE, SURFACE_3D_MONEYNESS_POINTS)
+
+    strike_mesh = np.zeros((len(fitted_sorted), SURFACE_3D_MONEYNESS_POINTS))
+    days_mesh = np.zeros((len(fitted_sorted), SURFACE_3D_MONEYNESS_POINTS))
+    vol_mesh = np.zeros((len(fitted_sorted), SURFACE_3D_MONEYNESS_POINTS))
+
+    market_strikes: list[float] = []
+    market_days: list[int] = []
+    market_vols: list[float] = []
+
+    for row, s in enumerate(fitted_sorted):
+        days = (s.expiry - snapshot_ts.date()).days
+        forward = s.forward_estimate.forward
+        for col, k in enumerate(k_grid):
+            strike_mesh[row, col] = forward * exp(k)
+            days_mesh[row, col] = days
+            vol_mesh[row, col] = s.slice.implied_vol(k, s.time_to_expiry)
+
+        # Only plot market points within the same moneyness band as the
+        # mesh -- some far-dated expiries genuinely list strikes several
+        # multiples of the forward away (real, sparse, illiquid Deribit
+        # listings), which would otherwise blow out the strike axis and
+        # make the whole chart unreadable, the same lesson learned
+        # building plot_smile.py.
+        for quote, vol in zip(s.quotes, s.vols, strict=True):
+            if abs(log(quote.strike / forward)) > SURFACE_3D_MONEYNESS_RANGE[1]:
+                continue
+            market_strikes.append(quote.strike)
+            market_days.append(days)
+            market_vols.append(vol)
+
+    fig = go.Figure(
+        data=[
+            go.Surface(
+                x=strike_mesh,
+                y=days_mesh,
+                z=vol_mesh,
+                colorscale="Viridis",
+                opacity=0.85,
+                name="SVI fit",
+                showscale=True,
+                colorbar={"title": "Implied vol", "tickformat": ".0%"},
+            ),
+            go.Scatter3d(
+                x=market_strikes,
+                y=market_days,
+                z=market_vols,
+                mode="markers",
+                marker={"size": 3, "color": PUT_COLOR},
+                name="Market",
+            ),
+        ]
+    )
+    fig.update_layout(
+        title=f"{currency} volatility surface",
+        scene={
+            "xaxis_title": "Strike ($)",
+            "yaxis_title": "Days to expiry",
+            "zaxis_title": "Implied vol",
+            "zaxis_tickformat": ".0%",
+        },
+        margin={"l": 0, "r": 0, "t": 40, "b": 0},
+        height=650,
+    )
+    return fig
+
+
 st.title("VolLab")
 st.caption(
     "Live BTC/ETH options research: implied vol surface, Heston pricing, "
@@ -174,8 +257,8 @@ if not fitted:
 st.sidebar.caption(f"Snapshot: {snapshot_ts.strftime('%Y-%m-%d %H:%M:%S UTC')}")
 st.sidebar.caption(f"{len(fitted)} expiries fitted, {len(skipped)} skipped")
 
-tab_smile, tab_term, tab_pricing, tab_hedging = st.tabs(
-    ["Volatility Smile", "Term Structure", "Heston Pricing", "Hedging Backtest"]
+tab_smile, tab_surface3d, tab_term, tab_pricing, tab_hedging = st.tabs(
+    ["Volatility Smile", "3D Surface", "Term Structure", "Heston Pricing", "Hedging Backtest"]
 )
 
 with tab_smile:
@@ -249,6 +332,20 @@ with tab_smile:
         with st.expander(f"{len(skipped)} expiries skipped"):
             for expiry_str, reason in skipped:
                 st.text(f"{expiry_str}: {reason}")
+
+with tab_surface3d:
+    st.subheader(f"{currency} volatility surface")
+    st.caption(
+        "One mesh row per fitted expiry (its own SVI slice, sampled across "
+        "log-moneyness), plus the real market points each slice was fit "
+        "to. Drag to rotate, scroll to zoom."
+    )
+
+    if len(fitted) >= 2:
+        surface_fig = build_surface_figure(fitted, snapshot_ts, currency)
+        st.plotly_chart(surface_fig, use_container_width=True)
+    else:
+        st.warning("Need at least 2 fitted expiries to build a surface.")
 
 with tab_term:
     st.subheader(f"{currency} term structure")

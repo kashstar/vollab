@@ -17,6 +17,8 @@ dependencies = [
     "matplotlib>=3.8",
     "torch>=2.2",
     "streamlit>=1.35",
+    "plotly>=5.20",
+    "kaleido>=0.2",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +27,7 @@ dev = [
     "mypy>=1.10",
     "pandas-stubs>=2.1",
     "scipy-stubs>=1.11",
+    "plotly-stubs>=0.1.4",
 ]
 
 [build-system]
