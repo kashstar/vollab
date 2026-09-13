@@ -3,11 +3,13 @@
 # read as one system in both light and dark mode.
 
 [theme]
-# Mode-independent options: baseFontSize and showSidebarBorder are only
-# valid at the top level, not inside [theme.light]/[theme.dark].
+# Mode-independent options: baseFontSize, showSidebarBorder, and
+# chartCategoricalColors are only valid at the top level in the Streamlit
+# version this app is pinned to, not inside [theme.light]/[theme.dark].
 showSidebarBorder = true
 baseFontSize = 14
 linkUnderline = false
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#8250df", "#d64545", "#dbab09", "#57606a"]
 
 [theme.light]
 primaryColor = "#2a78d6"
@@ -32,8 +34,6 @@ orangeColor = "#eb6834"
 blueColor = "#2a78d6"
 violetColor = "#8250df"
 grayColor = "#57606a"
-
-chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#8250df", "#d64545", "#dbab09", "#57606a"]
 
 dataframeBorderColor = "#dfe3ea"
 dataframeHeaderBackgroundColor = "#f5f7fa"
@@ -68,8 +68,6 @@ orangeColor = "#fb923c"
 blueColor = "#5b9bea"
 violetColor = "#a78bfa"
 grayColor = "#94a3b8"
-
-chartCategoricalColors = ["#5b9bea", "#fb923c", "#34d399", "#a78bfa", "#f87171", "#fbbf24", "#94a3b8"]
 
 dataframeBorderColor = "#2a3347"
 dataframeHeaderBackgroundColor = "#1a2233"

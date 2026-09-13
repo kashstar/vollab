@@ -250,7 +250,7 @@ def build_surface_figure(
     return fig
 
 
-st.title("VolLab", icon=":material/candlestick_chart:")
+st.title("VolLab")
 title_col, badge_col = st.columns([5, 1])
 title_col.caption(
     "Live BTC/ETH options research: implied vol surface, Heston pricing, "
@@ -259,7 +259,7 @@ title_col.caption(
 with badge_col:
     st.badge("Live data", icon=":material/sensors:", color="green")
 
-st.sidebar.header("Settings", icon=":material/tune:")
+st.sidebar.header("Settings")
 currency = st.sidebar.selectbox(
     "Underlying",
     ["BTC", "ETH"],
@@ -283,7 +283,7 @@ if not fitted:
 st.sidebar.caption(f"Snapshot: {snapshot_ts.strftime('%Y-%m-%d %H:%M:%S UTC')}")
 st.sidebar.caption(f"{len(fitted)} expiries fitted, {len(skipped)} skipped")
 
-st.sidebar.header("About", icon=":material/info:")
+st.sidebar.header("About")
 st.sidebar.caption(
     "Every number on this page is computed live from Deribit's public "
     "market data by VolLab's own surface, pricing, and hedging code -- "
@@ -299,7 +299,7 @@ tab_smile, tab_surface3d, tab_term, tab_pricing, tab_hedging = st.tabs(
 )
 
 with tab_smile:
-    st.subheader(f"{currency} volatility smile", icon=":material/show_chart:")
+    st.subheader(f"{currency} volatility smile")
 
     with st.expander("What is a volatility smile?", icon=":material/lightbulb:"):
         st.markdown(
@@ -327,7 +327,6 @@ with tab_smile:
     col1.metric(
         "Forward",
         f"${fe.forward:,.0f}",
-        icon=":material/trending_up:",
         border=True,
         help="The market's expected price for this expiry, recovered from "
         "put-call parity -- not just today's spot price.",
@@ -420,7 +419,7 @@ with tab_smile:
             margin={"l": 0, "r": 0, "t": 10, "b": 0},
             legend=LEGEND_TOP,
         )
-        st.plotly_chart(smile_fig, use_container_width=True)
+        st.plotly_chart(smile_fig)
     else:
         st.warning("Not enough usable strikes to plot a smile for this expiry.")
 
@@ -479,7 +478,7 @@ with tab_smile:
                 st.text(f"{expiry_str}: {reason}")
 
 with tab_surface3d:
-    st.subheader(f"{currency} volatility surface", icon=":material/view_in_ar:")
+    st.subheader(f"{currency} volatility surface")
 
     with st.expander("What is this?", icon=":material/lightbulb:"):
         st.markdown(
@@ -501,14 +500,14 @@ with tab_surface3d:
 
     if len(fitted) >= 2:
         surface_fig = build_surface_figure(fitted, snapshot_ts, currency)
-        st.plotly_chart(surface_fig, use_container_width=True)
+        st.plotly_chart(surface_fig)
     else:
         st.warning(
             "Need at least 2 fitted expiries to build a surface.", icon=":material/warning:"
         )
 
 with tab_term:
-    st.subheader(f"{currency} term structure", icon=":material/timeline:")
+    st.subheader(f"{currency} term structure")
 
     with st.expander("What is term structure?", icon=":material/lightbulb:"):
         st.markdown(
@@ -559,7 +558,7 @@ with tab_term:
     term_fig.update_xaxes(title_text="Days to expiry", row=1, col=1)
     term_fig.update_xaxes(title_text="Days to expiry", row=1, col=2)
     term_fig.update_layout(height=420, margin={"l": 0, "r": 0, "t": 40, "b": 0})
-    st.plotly_chart(term_fig, use_container_width=True)
+    st.plotly_chart(term_fig)
 
     st.dataframe(
         {
@@ -575,7 +574,7 @@ with tab_term:
     )
 
 with tab_pricing:
-    st.subheader(f"Heston pricing ({currency})", icon=":material/calculate:")
+    st.subheader(f"Heston pricing ({currency})")
 
     with st.expander(
         "What is the Heston model, and why cross-check two ways?", icon=":material/lightbulb:"
@@ -710,7 +709,7 @@ with tab_pricing:
         )
 
 with tab_hedging:
-    st.subheader(f"Hedging backtest ({currency})", icon=":material/balance:")
+    st.subheader(f"Hedging backtest ({currency})")
 
     with st.expander("What is delta vs delta-gamma hedging?", icon=":material/lightbulb:"):
         st.markdown(
@@ -848,7 +847,7 @@ with tab_hedging:
             margin={"l": 0, "r": 0, "t": 10, "b": 0},
             legend=LEGEND_TOP,
         )
-        st.plotly_chart(hist_fig, use_container_width=True)
+        st.plotly_chart(hist_fig)
 
         pnl_help = (
             "Average terminal P&L across all simulated paths, from the "
@@ -891,7 +890,7 @@ with tab_hedging:
             st.metric("CVaR95", f"${dg_cvar:,.2f}", border=True, help=cvar_help)
             st.metric("Total costs", f"${dg_costs:,.2f}", border=True, help=costs_help)
 
-        st.subheader("What this run implies", icon=":material/insights:")
+        st.subheader("What this run implies")
 
         std_reduction_pct = (delta_std - dg_std) / delta_std * 100
         cvar_improvement = dg_cvar - delta_cvar
