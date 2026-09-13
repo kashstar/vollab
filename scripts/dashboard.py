@@ -87,10 +87,17 @@ class SurfaceSlice:
         self.time_to_expiry = time_to_expiry
 
 
-@st.cache_data(ttl=SURFACE_CACHE_TTL, show_spinner=False)
+@st.cache_resource(ttl=SURFACE_CACHE_TTL, show_spinner=False)
 def load_surface(currency: str) -> tuple[datetime, list[SurfaceSlice], list[tuple[str, str]]]:
     """Fetch live chains for every expiry and fit ForwardEstimator ->
     ImpliedVolSolver -> SVICalibrator for each one that's usable.
+
+    cache_resource, not cache_data: SurfaceSlice is defined in this script,
+    which Streamlit re-executes as __main__ on every rerun, so pickling a
+    cache_data return value containing it can hit a class-identity mismatch
+    right after a fresh process start. cache_resource holds the object by
+    reference instead of pickling it, which is safe since nothing mutates
+    the returned slices.
 
     Returns (snapshot_ts, fitted slices, [(expiry_str, skip_reason), ...]).
     """
